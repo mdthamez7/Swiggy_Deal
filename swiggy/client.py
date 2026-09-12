@@ -122,7 +122,7 @@ class MCPClient:
         self._post(payload)
 
     def list_tools(self):
-        return self._request("tools/list", {"cursor": None})
+        return self._request("tools/list", {})
 
     def call_tool(self, name, arguments):
         result = self._request(

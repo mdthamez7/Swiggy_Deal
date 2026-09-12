@@ -1,11 +1,27 @@
 import os, re, time
+from dotenv import load_dotenv
+
+# Load .env BEFORE importing configuration modules.
+load_dotenv()
+
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timezone
 from pathlib import Path
-from dotenv import load_dotenv
 from config.categories import CATEGORIES
 from config.locations import LOCATIONS
-from config.settings import (MAX_LOCATION_WORKERS, MAX_CATEGORY_WORKERS, MAX_PAGES, DELAY, LOOKBACK, MIN_HISTORY, PREVIOUS_LOW_DROP, STABLE_MRP_DROP, MRP_TOLERANCE, COOLDOWN, env_json)
+from config.settings import (
+    MAX_LOCATION_WORKERS,
+    MAX_CATEGORY_WORKERS,
+    MAX_PAGES,
+    DELAY,
+    LOOKBACK,
+    MIN_HISTORY,
+    PREVIOUS_LOW_DROP,
+    STABLE_MRP_DROP,
+    MRP_TOLERANCE,
+    COOLDOWN,
+    env_json,
+)
 from database.price_history import PriceHistory
 from scanner.deal_rules import evaluate
 from swiggy.client import MCPClient, unwrap_tool_result

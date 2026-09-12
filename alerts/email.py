@@ -118,4 +118,8 @@ def send_deal_email(deals, unmapped, errors):
     except Exception as exc:
         # Email failure should not make the scanner fail.
         print(f"Email alert failed; continuing scan: {exc}")
+<<<<<<< HEAD
         return False
+=======
+        return False
+>>>>>>> 42e0b3e15da91c690982068452768a1e166681b5

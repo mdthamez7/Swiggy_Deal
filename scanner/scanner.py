@@ -9,6 +9,7 @@ from config.settings import (MAX_LOCATION_WORKERS, MAX_CATEGORY_WORKERS, MAX_PAG
 from database.price_history import PriceHistory
 from scanner.deal_rules import evaluate
 from swiggy.client import MCPClient, unwrap_tool_result
+from swiggy.address_resolver import resolve_targets
 load_dotenv()
 DB_PATH=Path(os.getenv('PRICE_DB_PATH','data/price_history.db'))
 
@@ -87,15 +88,18 @@ def print_summary(results,unmapped):
 def run():
     print('='*78); print('LOOTDEAL - SWIGGY INSTAMART GITHUB SCANNER'); print('='*78)
     print(f'Locations configured : {len(LOCATIONS)}'); print(f'Categories           : {len(CATEGORIES)}'); print(f'Location workers     : {MAX_LOCATION_WORKERS}'); print(f'Category workers     : {MAX_CATEGORY_WORKERS}'); print('Mode                 : NON-INTERACTIVE')
-    address_map=env_json('SWIGGY_ADDRESS_MAP_JSON',{})
-    if not address_map: raise RuntimeError('SWIGGY_ADDRESS_MAP_JSON is required. Map each target location key to a real Swiggy addressId. See README.')
-    mapped=[]; unmapped=[]
-    for t in LOCATIONS:
-        aid=address_map.get(key(t))
-        if aid: mapped.append((t,str(aid)))
-        else: unmapped.append(t)
-    print(f'Mapped targets       : {len(mapped)}'); print(f'Unmapped targets     : {len(unmapped)}')
-    if not mapped: raise RuntimeError('No target locations have a Swiggy addressId mapping.')
+    # Resolve target city/pincode against the authenticated account's real
+    # saved Swiggy addresses on every run. No address IDs are stored in the
+    # repository and no IDs are guessed or generated.
+    mapped, unmapped = resolve_targets(LOCATIONS, token=os.getenv('SWIGGY_ACCESS_TOKEN'))
+    print(f'Resolved targets     : {len(mapped)}')
+    print(f'Unresolved targets   : {len(unmapped)}')
+    if not mapped:
+        raise RuntimeError(
+            'No target locations matched a real saved Swiggy address. '
+            'Add the target location to the authenticated Swiggy account, '
+            'or remove that target from TARGET_LOCATIONS_JSON.'
+        )
     started=time.time(); results=[]
     with ThreadPoolExecutor(max_workers=min(MAX_LOCATION_WORKERS,len(mapped))) as pool:
         futures={pool.submit(scan_target,t,aid):t for t,aid in mapped}

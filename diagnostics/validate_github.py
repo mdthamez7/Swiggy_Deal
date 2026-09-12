@@ -1,10 +1,28 @@
 import os, json
-required=['SWIGGY_ACCESS_TOKEN','SWIGGY_ADDRESS_MAP_JSON']
-missing=[x for x in required if not os.getenv(x,'').strip()]
-if missing: raise SystemExit('Missing required GitHub Secrets: '+', '.join(missing))
-try: locations=json.loads(os.getenv('TARGET_LOCATIONS_JSON','')) if os.getenv('TARGET_LOCATIONS_JSON','').strip() else []
-except Exception as e: raise SystemExit(f'TARGET_LOCATIONS_JSON is invalid JSON: {e}')
-try: amap=json.loads(os.getenv('SWIGGY_ADDRESS_MAP_JSON',''))
-except Exception as e: raise SystemExit(f'SWIGGY_ADDRESS_MAP_JSON is invalid JSON: {e}')
-if not isinstance(amap,dict): raise SystemExit('SWIGGY_ADDRESS_MAP_JSON must be a JSON object.')
-print(f'Configuration OK. GitHub targets variable contains {len(locations)} locations; address map contains {len(amap)} mappings.')
+
+required = ["SWIGGY_ACCESS_TOKEN"]
+missing = [x for x in required if not os.getenv(x, "").strip()]
+if missing:
+    raise SystemExit("Missing required GitHub Secrets: " + ", ".join(missing))
+
+raw = os.getenv("TARGET_LOCATIONS_JSON", "").strip()
+if raw:
+    try:
+        locations = json.loads(raw)
+    except Exception as e:
+        raise SystemExit(f"TARGET_LOCATIONS_JSON is invalid JSON: {e}")
+else:
+    locations = []
+
+if locations and not isinstance(locations, list):
+    raise SystemExit("TARGET_LOCATIONS_JSON must be a JSON array.")
+
+for i, item in enumerate(locations):
+    if not isinstance(item, dict):
+        raise SystemExit(f"TARGET_LOCATIONS_JSON item {i} must be an object.")
+    for field in ("state", "city", "pincode"):
+        if not str(item.get(field, "")).strip():
+            raise SystemExit(f"TARGET_LOCATIONS_JSON item {i} is missing '{field}'.")
+
+print(f"Configuration OK. GitHub target variable contains {len(locations)} locations.")
+print("Address IDs will be resolved at runtime from the authenticated Swiggy account's saved addresses.")

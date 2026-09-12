@@ -111,16 +111,6 @@ Create:
 
 This is the current access token from the successful Swiggy OAuth login.
 
-`SWIGGY_ADDRESS_MAP_JSON`
-
-This is a JSON object mapping each target key to the **real Swiggy address ID** for that target. Example:
-```json
-{"Tamil Nadu|Madurai|625016":"addr_abc123","Karnataka|Bengaluru|560102":"addr_xyz789"}
-```
-
-Never invent IDs. The key format is exactly:
-`STATE|CITY|PINCODE`
-
 `SMTP_USER`
 
 Your Gmail address (or SMTP username).
@@ -129,17 +119,17 @@ Your Gmail address (or SMTP username).
 
 For Gmail, use a Gmail App Password rather than the normal account password.
 
-### 6. Build the address map
+### 6. Automatic address resolution
 
-Because Swiggy requires real saved address IDs, use the already-working local OAuth package once to retrieve them:
+You do **not** need to create `SWIGGY_ADDRESS_MAP_JSON`.
 
-```powershell
-python -m diagnostics.export_addresses
-```
+At the beginning of every scan, the package calls Swiggy `get_addresses`, reads the authenticated account's real saved addresses, and matches the targets by city + pincode. It then passes the real returned `addressId` to `search_products`.
 
-It prints the real saved address objects and their IDs. Add only the mappings that genuinely correspond to your target locations to `SWIGGY_ADDRESS_MAP_JSON`.
+This means address IDs are not stored in the repository and do not have to be manually copied into GitHub.
 
-**Do not create fake street addresses and do not guess IDs.**
+If a target city/pincode is not present in the authenticated Swiggy account's saved addresses, that target is reported as unresolved and skipped. A pincode by itself cannot be turned into a valid Swiggy `addressId`; the scanner will never invent one.
+
+Do not create fake street addresses or guess IDs.
 
 ### 7. Token lifetime
 
@@ -151,7 +141,7 @@ Go to **Actions → LootDeal Scanner → Run workflow**.
 
 Watch the log. It should show:
 - configured targets
-- mapped/unmapped targets
+- resolved/unresolved targets
 - parallel location workers
 - products found
 - deals found
